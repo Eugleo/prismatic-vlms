@@ -66,6 +66,9 @@ class PrismaticVLM(VLM):
         else:
             raise ValueError(f"PrismaticVLM with `{arch_specifier = }` is not supported!")
 
+        # WARNING: Added to patch error in new versions of transformers
+        self._supports_cache_class = False
+        
         # Trackers
         self.vision_backbone_requires_grad = False
 
