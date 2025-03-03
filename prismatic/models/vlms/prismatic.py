@@ -68,7 +68,7 @@ class PrismaticVLM(VLM):
 
         # WARNING: Added to patch error in new versions of transformers
         self._supports_cache_class = False
-        
+
         # Trackers
         self.vision_backbone_requires_grad = False
 
@@ -315,6 +315,8 @@ class PrismaticVLM(VLM):
         else:
             patch_features = self.vision_backbone(pixel_values[multimodal_indices])
 
+        if isinstance(patch_features, list):
+            patch_features = patch_features[0]
         # Projection Logic :: [bsz, num_patches, llm_embed_dim] =>> num_patches = (2 *) (256 + 1) for ViT-L + CLS
         projected_patch_embeddings = self.projector(patch_features)
         projected_patch_attention_mask = None
@@ -325,6 +327,7 @@ class PrismaticVLM(VLM):
                 dtype=attention_mask.dtype,
                 device=attention_mask.device,
             )
+
 
         # Get Input Embeddings from LLM Backbone :: [bsz, input_seq_len, llm_embed_dim]
         input_embeddings = self.llm_backbone.embed_input_ids(input_ids)
@@ -541,9 +544,9 @@ class PrismaticVLM(VLM):
         input_ids = tokenizer(prompt_text, truncation=True, return_tensors="pt").input_ids.to(self.device)
         pixel_values = image_transform(image)
         if isinstance(pixel_values, torch.Tensor):
-            pixel_values = pixel_values[None, ...].to(self.device)
+            pixel_values = pixel_values.to(self.device)
         elif isinstance(pixel_values, dict):
-            pixel_values = {k: v[None, ...].to(self.device) for k, v in pixel_values.items()}
+            pixel_values = {k: v.to(self.device) for k, v in pixel_values.items()}
         else:
             raise ValueError(f"Unsupported `pixel_values` type = {type(pixel_values)}")
 
